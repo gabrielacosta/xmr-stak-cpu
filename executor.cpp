@@ -17,6 +17,7 @@
 #include <string>
 #include <cmath>
 #include <algorithm>
+#include <map>
 #include <assert.h>
 #include <time.h>
 #include "executor.h"
@@ -28,7 +29,6 @@
 
 #ifdef _WIN32
 #include <Windows.h>
-#include <map>
 
 static const std::map<int64_t, int> PRIORITIES =
 {
@@ -47,14 +47,15 @@ void set_process_priority(int priority)
 }
 
 #else
-#include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 static const std::map<int64_t, int> PRIORITIES =
 {
 	{ -2,  14 },
 	{ -1,   7 },
-	{  0    0 },
+	{  0,   0 },
 	{  1,  -7 },
 	{  2, -14 },
 };
@@ -63,7 +64,7 @@ void set_process_priority(int priority)
 {
 	auto it = PRIORITIES.find(priority);
 	if(it != PRIORITIES.end())
-		setpriority(PRIO_PROCESS, 0, it->second);
+		setpriority(PRIO_PROCESS, getpid(), it->second);
 }
 
 #endif
@@ -370,7 +371,9 @@ void executor::ex_main()
 {
 	assert(1000 % iTickTime == 0);
 
-	set_process_priority(jconf::inst()->GetProcessPriority());
+	int process_priority = jconf::inst()->GetProcessPriority();
+	printer::inst()->print_msg(L1, "Setting process priority to %i...", process_priority);
+	set_process_priority(process_priority);
 
 	minethd::miner_work oWork = minethd::miner_work();
 	pvThreads = minethd::thread_starter(oWork);
