@@ -34,7 +34,7 @@ using namespace rapidjson;
 /*
  * This enum needs to match index in oConfigValues, otherwise we will get a runtime error
  */
-enum configEnum { iCpuThreadNum, aCpuThreadsConf, sUseSlowMem, sPoolAddr,
+enum configEnum { iCpuThreadNum, aCpuThreadsConf, iProcessPriority, sUseSlowMem, sPoolAddr,
 	sWalletAddr, sPoolPwd, iCallTimeout, iNetRetry, iVerboseLevel, iAutohashTime, bPreferIpv4 };
 
 struct configVal {
@@ -47,6 +47,7 @@ struct configVal {
 configVal oConfigValues[] = {
 	{ iCpuThreadNum, "cpu_thread_num", kNumberType },
 	{ aCpuThreadsConf, "cpu_threads_conf", kArrayType },
+	{ iProcessPriority, "process_priority", kNumberType },
 	{ sUseSlowMem, "use_slow_memory", kStringType },
 	{ sPoolAddr, "pool_address", kStringType },
 	{ sWalletAddr, "wallet_address", kStringType },
@@ -55,7 +56,7 @@ configVal oConfigValues[] = {
 	{ iNetRetry, "retry_time", kNumberType },
 	{ iVerboseLevel, "verbose_level", kNumberType },
 	{ iAutohashTime, "h_print_time", kNumberType },
-	{ bPreferIpv4, "prefer_ipv4", kTrueType }
+	{ bPreferIpv4, "prefer_ipv4", kTrueType },
 };
 
 constexpr size_t iConfigCnt = (sizeof(oConfigValues)/sizeof(oConfigValues[0]));
@@ -183,6 +184,11 @@ uint64_t jconf::GetVerboseLevel()
 uint64_t jconf::GetAutohashTime()
 {
 	return prv->configValues[iAutohashTime]->GetUint64();
+}
+
+size_t jconf::GetProcessPriority()
+{
+	return prv->configValues[iProcessPriority]->GetInt64();
 }
 
 bool jconf::parse_config(const char* sFilename)

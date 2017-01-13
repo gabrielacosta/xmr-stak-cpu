@@ -26,6 +26,48 @@
 #include "console.h"
 #include "donate-level.h"
 
+#ifdef _WIN32
+#include <Windows.h>
+#include <map>
+
+static const std::map<int64_t, int> PRIORITIES =
+{
+	{ -2, IDLE_PRIORITY_CLASS         },
+	{ -1, BELOW_NORMAL_PRIORITY_CLASS },
+	{ -0, NORMAL_PRIORITY_CLASS       },
+	{  1, ABOVE_NORMAL_PRIORITY_CLASS },
+	{  2, HIGH_PRIORITY_CLASS         },
+};
+
+void set_process_priority(int priority)
+{
+	auto it = PRIORITIES.find(priority);
+	if(it != PRIORITIES.end())
+		SetPriorityClass(GetCurrentProcess(), it->second);
+}
+
+#else
+#include <sys/time.h>
+#include <sys/resource.h>
+
+static const std::map<int64_t, int> PRIORITIES =
+{
+	{ -2,  14 },
+	{ -1,   7 },
+	{  0    0 },
+	{  1,  -7 },
+	{  2, -14 },
+};
+
+void set_process_priority(int priority)
+{
+	auto it = PRIORITIES.find(priority);
+	if(it != PRIORITIES.end())
+		setpriority(PRIO_PROCESS, 0, it->second);
+}
+
+#endif
+
 executor* executor::oInst = NULL;
 
 executor::executor()
@@ -327,6 +369,8 @@ void executor::on_switch_pool(size_t pool_id)
 void executor::ex_main()
 {
 	assert(1000 % iTickTime == 0);
+
+	set_process_priority(jconf::inst()->GetProcessPriority());
 
 	minethd::miner_work oWork = minethd::miner_work();
 	pvThreads = minethd::thread_starter(oWork);
